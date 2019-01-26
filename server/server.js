@@ -1,6 +1,8 @@
-let express = require('express');
+const _ = require('lodash')
+
+const express = require('express');
 const {ObjectID} = require('mongodb');
-let bodyParser = require('body-parser');
+const bodyParser = require('body-parser');
 
 
 let {mongoose} = require('./db/mongoose')
@@ -91,6 +93,37 @@ Todo.findByIdAndRemove(id).then((todo) => {
 }).catch((e) => {
   res.status(400).send();
 })
+  
+})
+
+
+// update route api
+
+app.patch('/todos/:id', (req, res) => {
+  let id = req.params.id;
+  let body = _.pick(req.body, ['text', 'completed']);
+  
+  //check id is valid
+  if (!ObjectID.isValid(id)) {
+    return res.status(404).send();
+  }
+  
+  if(_.isBoolean(body.completed) && body.completed) {
+    body.completedAt = new Date().getTime(); // javascript timestamp 
+  } else {
+    body.completed = false;
+    body.completedAt = null
+  }
+  
+    Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+      if (!todo) {
+        return res.status(404).send();
+      }
+      
+      res.send({todo:todo})
+    }).catch((e) => {
+      res.status(400).send();
+    })
   
 })
 
